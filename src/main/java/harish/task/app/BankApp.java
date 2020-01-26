@@ -1,9 +1,12 @@
 package harish.task.app;
 
 import harish.task.app.handlers.AccountController;
+import harish.task.app.handlers.TransactionController;
+import harish.task.app.repository.AccountRepository;
+import harish.task.app.repository.TransactionRepository;
 import io.javalin.Javalin;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
+import static io.javalin.apibuilder.ApiBuilder.crud;
 
 public class BankApp {
 
@@ -11,15 +14,10 @@ public class BankApp {
         Javalin app = Javalin.create()
                 .start();
         app.get("/",ctx -> ctx.html("Welcome to Bank API"));
+
         app.routes(() -> {
-            path("account", () -> {
-                post(AccountController::createAccount);
-                path(":id", () -> {
-                    get(AccountController::getAccount);
-                    patch(AccountController::updateAccount);
-                    delete(AccountController::deleteAccount);
-                });
-            });
+            crud("account/:account-id", new AccountController(new AccountRepository()));
+            crud("transaction/:account-id", new TransactionController(new TransactionRepository()));
         });
     }
 
