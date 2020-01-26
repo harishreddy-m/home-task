@@ -6,7 +6,8 @@ import io.javalin.Javalin;
 import static io.javalin.apibuilder.ApiBuilder.*;
 
 public class BankApp {
-    public static void main(String[] args) {
+
+    public void init(){
         Javalin app = Javalin.create()
                 .start();
         app.get("/",ctx -> ctx.html("Welcome to Bank API"));
@@ -20,5 +21,9 @@ public class BankApp {
                 });
             });
         });
+    }
+
+    public static void main(String[] args) {
+     new BankApp().init();
     }
 }
