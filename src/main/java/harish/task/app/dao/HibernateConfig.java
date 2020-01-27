@@ -1,4 +1,4 @@
-package harish.task.app.repository;
+package harish.task.app.dao;
 
 
 import harish.task.app.model.Account;

@@ -1,48 +1,68 @@
 package harish.task.app.handlers;
 
-import harish.task.app.repository.AccountRepository;
+import harish.task.app.dto.AccountListResponse;
+import harish.task.app.dto.AccountRequest;
+import harish.task.app.dto.AccountResponse;
+import harish.task.app.dto.TransactionDto;
+import harish.task.app.model.AccountTransaction;
+import harish.task.app.dao.AccountManager;
 import harish.task.app.model.Account;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class AccountController implements CrudHandler{
-    private AccountRepository accountRepository;
+    private AccountManager accountManager;
 
-    public AccountController(AccountRepository accountRepository) {
-        this.accountRepository = accountRepository;
+    public AccountController(AccountManager accountManager) {
+        this.accountManager = accountManager;
     }
 
     @Override
     public void create(Context ctx) {
-        Double initBalance = Double.valueOf(ctx.req.getParameter("balance"));
-        accountRepository.save(new Account(initBalance));
-        ctx.status(201);
+        AccountRequest accountRequest = ctx.bodyAsClass(AccountRequest.class);
+        Long accountId = accountManager.save(new Account(accountRequest.getBalance()));
+        ctx.status(201).header("Location","account/"+accountId);
     }
 
     @Override
     public void delete(Context ctx, String id) {
-        accountRepository.delete(id);
+        accountManager.delete(Long.valueOf(id));
         ctx.status(204);
     }
 
     @Override
     public void getAll(Context ctx) {
-        ctx.json(accountRepository.findAll());
+        List<AccountResponse> accountsDto = accountManager.findAll().stream().map(this::toAccountDto).collect(Collectors.toList());
+        AccountListResponse response = new AccountListResponse(accountsDto);
+        ctx.json(response);
+    }
+
+    private AccountResponse toAccountDto(Account account) {
+        List<TransactionDto> transactionDtos = account.getTransactions().stream().map(this::toTransactionDto).collect(Collectors.toList());
+        AccountResponse accountResponse = new AccountResponse(account.getId(),account.getBalance(),transactionDtos);
+        return accountResponse;
+    }
+
+    private TransactionDto toTransactionDto(AccountTransaction accountTransaction) {
+        TransactionDto transactionDto = new TransactionDto();
+        transactionDto.setAmount(accountTransaction.getAmount());
+        transactionDto.setTimestamp(accountTransaction.getDateTime().format(DateTimeFormatter.ISO_DATE_TIME));
+        transactionDto.setTransactionUUID(accountTransaction.getTransactionId().toString());
+        return transactionDto;
     }
 
     @Override
     public void getOne(Context ctx, String id) {
-        Optional<Account> Account = accountRepository.findById(Long.valueOf(id));
-        handleOptionalResponse(ctx, Account);
+        Optional<Account> account = accountManager.findById(Long.valueOf(id));
+        account.map(this::toAccountDto).map(ctx::json);
     }
 
 
-    private void handleOptionalResponse(Context ctx, Optional<Account> account) {
-        account.map(ctx::json)
-                .orElse(ctx.status(404));
-    }
 
     @Override
     public void update(Context ctx, String id) {

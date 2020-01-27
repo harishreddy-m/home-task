@@ -1,24 +1,33 @@
 package harish.task.app;
 
+import harish.task.app.dao.HibernateConfig;
+import harish.task.app.exception.FailedTransaction;
 import harish.task.app.handlers.AccountController;
 import harish.task.app.handlers.TransactionController;
-import harish.task.app.repository.AccountRepository;
-import harish.task.app.repository.TransactionRepository;
+import harish.task.app.dao.AccountManager;
 import io.javalin.Javalin;
 
 import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class BankApp {
-
+    private Javalin app;
     public void init(){
-        Javalin app = Javalin.create()
+        app = Javalin.create()
                 .start();
         app.get("/",ctx -> ctx.html("Welcome to Bank API"));
-
-        app.routes(() -> {
-            crud("account/:account-id", new AccountController(new AccountRepository()));
-            crud("transaction/:account-id", new TransactionController(new TransactionRepository()));
+        app.exception(FailedTransaction.class, (e, ctx) -> {
+            ctx.status(400).json(e);
         });
+        AccountManager accountManager = new AccountManager();
+        app.routes(() -> {
+            crud("account/:account-id", new AccountController(accountManager));
+            post("transaction/", new TransactionController(accountManager));
+        });
+    }
+
+    public void destroy(){
+        app.stop();
     }
 
     public static void main(String[] args) {

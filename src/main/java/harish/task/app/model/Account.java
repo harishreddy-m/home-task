@@ -2,7 +2,7 @@ package harish.task.app.model;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -15,12 +15,32 @@ public class Account implements Serializable {
     @Column
     Double balance;
 
-    @OneToMany
+    @OneToMany(targetEntity = AccountTransaction.class, mappedBy = "belongsTo", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     Set<AccountTransaction> transactions;
+
+    public Double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(Double balance) {
+        this.balance = balance;
+    }
+
+    public Set<AccountTransaction> getTransactions() {
+        return transactions;
+    }
+
+    public void setTransactions(Set<AccountTransaction> transactions) {
+        this.transactions = transactions;
+    }
 
     public Account(Double initialBalance) {
         balance = initialBalance;
-        transactions = Collections.emptySet();
+        transactions = new HashSet<>();
+    }
+
+    public Account(){
+        this(0.00);
     }
 
     public void addBalance(Double amount){
@@ -29,5 +49,9 @@ public class Account implements Serializable {
 
     public void reduceBalance(Double amount){
         balance-=amount;
+    }
+
+    public Long getId() {
+        return id;
     }
 }
